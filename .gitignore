@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+README.txt
+complete-*.zip
+.env
+.DS_Store

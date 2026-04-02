@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: inventory-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-adminpassword}
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build: .
+    container_name: inventory-api
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URL: mongodb://admin:adminpassword@mongo:27017/?authSource=admin
+      MONGO_DB: ${MONGO_DB:-inventory}
+      MONGO_COLLECTION: ${MONGO_COLLECTION:-products}
+    command: >
+      bash -lc "python3 scripts/import_csv_to_mongo.py &&
+                uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  mongo_data:

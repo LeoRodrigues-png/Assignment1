@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: inventory-api
+    metrics_path: /metrics
+    static_configs:
+      # Monitoring stack runs in a separate compose project, so scrape via the host port.
+      # On Docker Desktop (Windows/macOS), host.docker.internal resolves back to the host.
+      - targets: ["host.docker.internal:8000"]
+
