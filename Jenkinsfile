@@ -37,7 +37,7 @@ pipeline {
             -e MONGO_INITDB_ROOT_PASSWORD=adminpassword ^
             mongo:7
         '''
-        bat 'timeout /t 5 /nobreak >nul'
+        powershell 'Start-Sleep -Seconds 5'
       }
     }
 
