@@ -46,7 +46,7 @@ pipeline {
           docker rm -f %API_CONTAINER% || exit /b 0
         '''
         bat '''
-          docker run -d --name %API_CONTAINER% --network %NETWORK% -p 8000:8000 ^
+          docker run -d --name %API_CONTAINER% --network %NETWORK% ^
             -e MONGO_URL=mongodb://admin:adminpassword@%MONGO_CONTAINER%:27017/?authSource=admin ^
             -e MONGO_DB=inventory ^
             -e MONGO_COLLECTION=products ^
