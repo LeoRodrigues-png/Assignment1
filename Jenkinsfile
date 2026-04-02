@@ -6,7 +6,8 @@ pipeline {
     API_CONTAINER = "inventory-api-jenkins"
     MONGO_CONTAINER = "inventory-mongo-jenkins"
     NETWORK = "inventory-net"
-    BASE_URL = "http://localhost:8000"
+    // No host port binding (avoids conflicts on Windows agents).
+    BASE_URL = "http://inventory-api-jenkins:8000"
   }
 
   stages {
@@ -58,22 +59,10 @@ pipeline {
       steps {
         powershell '''
           $ErrorActionPreference = "Stop"
-          $ok = $false
-          for ($i = 1; $i -le 30; $i++) {
-            try {
-              curl.exe -sSf "$env:BASE_URL/getAll" | Out-Null
-              $ok = $true
-              break
-            } catch {
-              Start-Sleep -Seconds 2
-            }
-          }
-          if (-not $ok) {
-            Write-Host "API did not become ready"
-            docker logs $env:API_CONTAINER
-            exit 1
-          }
-          Write-Host "API is up"
+          # Probe from inside the Docker network to avoid host networking issues on Windows.
+          docker run --rm --network $env:NETWORK curlimages/curl:8.6.0 `
+            -sSf "$env:BASE_URL/getAll" | Out-Null
+          Write-Host "API is up (reachable on Docker network)"
         '''
       }
     }
@@ -83,7 +72,7 @@ pipeline {
         powershell '''
           $ErrorActionPreference = "Stop"
           $testsDir = Join-Path $env:WORKSPACE "tests"
-          docker run --rm --network host `
+          docker run --rm --network $env:NETWORK `
             -v "${testsDir}:/etc/newman" `
             postman/newman:alpine `
             run /etc/newman/postman_collection.json `
