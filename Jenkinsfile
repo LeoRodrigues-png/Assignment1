@@ -37,6 +37,7 @@ pipeline {
             -e MONGO_INITDB_ROOT_PASSWORD=adminpassword ^
             mongo:7
         '''
+        bat 'timeout /t 5 /nobreak >nul'
       }
     }
 
@@ -50,7 +51,8 @@ pipeline {
             -e MONGO_URL=mongodb://admin:adminpassword@%MONGO_CONTAINER%:27017/?authSource=admin ^
             -e MONGO_DB=inventory ^
             -e MONGO_COLLECTION=products ^
-            %IMAGE_NAME%:latest
+            %IMAGE_NAME%:latest ^
+            bash -lc "python3 scripts/import_csv_to_mongo.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
         '''
       }
     }
@@ -85,8 +87,11 @@ pipeline {
       steps {
         powershell '''
           $ErrorActionPreference = "Stop"
-          docker run --rm --network host `
-            -v "$env:WORKSPACE:/work" -w /work `
+          # Do not use --network host on Windows Docker; it often breaks bind mounts.
+          $ws = (Get-Item $env:WORKSPACE).FullName
+          docker run --rm `
+            -v "${ws}:/work" `
+            -w /work `
             python:3.11-slim `
             python generate_readme.py
           if (-not (Test-Path (Join-Path $env:WORKSPACE "README.txt"))) { throw "README.txt not generated" }
